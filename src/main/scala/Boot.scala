@@ -25,7 +25,6 @@ object Boot extends App {
   }
 
   val width = 300
-
   val height = 300
 
   var posX = 0
