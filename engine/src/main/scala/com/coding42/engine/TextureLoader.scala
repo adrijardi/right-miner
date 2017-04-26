@@ -36,24 +36,13 @@ object TextureLoader {
     image.getRGB(0, 0, image.getWidth, image.getHeight, pixels, 0, image.getWidth)
     val buffer = BufferUtils.createByteBuffer(image.getWidth * image.getHeight * BYTES_PER_PIXEL)
     //4 for RGBA, 3 for RGB
-    var y = 0
-    while ( {
-      y < image.getHeight
-    }) {
-      var x = 0
-      while ( {
-        x < image.getWidth
-      }) {
-        val pixel = pixels(y * image.getWidth + x)
-        buffer.put(((pixel >> 16) & 0xFF).toByte) // Red component
-        buffer.put(((pixel >> 8) & 0xFF).toByte) // Green component
-        buffer.put((pixel & 0xFF).toByte) // Blue component
-        buffer.put(((pixel >> 24) & 0xFF).toByte) // Alpha component. Only for RGBA
 
-        x += 1
-      }
-
-      y += 1
+    for(y <- 0 until image.getHeight; x <- 0 until image.getWidth) {
+      val pixel = pixels(y * image.getWidth + x)
+      buffer.put(((pixel >> 16) & 0xFF).toByte) // Red component
+      buffer.put(((pixel >> 8) & 0xFF).toByte) // Green component
+      buffer.put((pixel & 0xFF).toByte) // Blue component
+      buffer.put(((pixel >> 24) & 0xFF).toByte) // Alpha component. Only for RGBA
     }
     buffer.flip //FOR THE LOVE OF GOD DO NOT FORGET THIS
 
