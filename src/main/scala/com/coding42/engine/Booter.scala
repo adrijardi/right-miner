@@ -42,7 +42,7 @@ class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader:
 
     // Create the window
     val config = world.gameConfig
-    window = glfwCreateWindow(config.screenWidth, config.screenHeight, config.windownName, NULL, NULL)
+    window = glfwCreateWindow(config.screenWidth, config.screenHeight, config.windowName, NULL, NULL)
     if (window == NULL) throw new RuntimeException("Failed to create the GLFW window")
 
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
