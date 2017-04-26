@@ -10,8 +10,10 @@ import scala.util.Try
 object MinerResourceLoader extends ResourceLoader[Resources] {
 
   override def apply: Try[Resources] = {
-    val texture = TextureLoader.newTexture("8_Bit_Mario.png")
-    texture.map(Resources)
+    for {
+      player <- TextureLoader.newTexture("8_Bit_Mario.png")
+      block <- TextureLoader.newTexture("block.jpg")
+    } yield Resources(player, block)
   }
 
 }

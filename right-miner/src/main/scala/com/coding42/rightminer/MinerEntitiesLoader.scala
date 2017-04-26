@@ -8,6 +8,6 @@ import com.coding42.engine.{Component, EntitiesLoader, GameObject}
 object MinerEntitiesLoader extends EntitiesLoader[Resources] {
 
   override def apply(resources: Resources): Set[(GameObject, Set[Component])] =
-    Set(GameManager(resources), Player(resources))
+    Set(GameManager(resources), Player(resources), Block(resources))
 
 }
