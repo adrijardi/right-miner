@@ -8,5 +8,6 @@ import scala.util.Try
 package object engine {
 
   type ResourceLoader = () => Try[Resources]
-  type EntitiesLoader = (Resources) => Set[(GameObject, Set[Component])]
+  type Entity = (GameObject, Set[Component])
+  type EntitiesLoader = (Resources) => Set[Entity]
 }

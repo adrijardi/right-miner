@@ -42,18 +42,16 @@ class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader:
 
     // Create the window
     val config = world.gameConfig
-    window = glfwCreateWindow(config.screenWidth, config.screenHeight, "Hello World!", NULL, NULL)
+    window = glfwCreateWindow(config.screenWidth, config.screenHeight, config.windownName, NULL, NULL)
     if (window == NULL) throw new RuntimeException("Failed to create the GLFW window")
 
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
     glfwSetKeyCallback(window, (window: Long, key: Int, scancode: Int, action: Int, mods: Int) => {
-      def foo(window: Long, key: Int, scancode: Int, action: Int, mods: Int) = {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true) // We will detect this in the rendering loop
-        if (action == GLFW_PRESS) {
-          world = world.allComponents.collect {
-            case c: CodeLogic => c
-          }.foldLeft(world)( (w, l) => l.handleKeyPressed(key)(w)) // TODO change to traverse ?
-        }
+      def foo(window: Long, key: Int, scancode: Int, action: Int, mods: Int) = action match {
+        case GLFW_PRESS => invokeKey(_.handleKeyPressed(key))
+        case GLFW_RELEASE => invokeKey(_.handleKeyDown(key))
+        case GLFW_PRESS => invokeKey(_.handleKeyUp(key))
+        case n => println(s"Not handling event of type $n")
       }
 
       foo(window, key, scancode, action, mods)
@@ -71,7 +69,8 @@ class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader:
         val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor)
         // Center the window
         glfwSetWindowPos(window, (vidmode.width - pWidth.get(0)) / 2, (vidmode.height - pHeight.get(0)) / 2)
-        // the stack frame is popped automatically} finally {
+        // the stack frame is popped automatically
+      } finally {
         if (stack != null) stack.close()
       }
     }
@@ -81,6 +80,12 @@ class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader:
     glfwSwapInterval(1)
     // Make the window visible
     glfwShowWindow(window)
+  }
+
+  private def invokeKey(pressFn: (CodeLogic) => (World) => World) = {
+    world = world.allComponents.collect {
+      case c: CodeLogic => c
+    }.foldLeft(world)((w, l) => pressFn(l)(w)) // TODO change to traverse ?
   }
 
   private def loop() = { // This line is critical for LWJGL's interoperation with GLFW's
@@ -118,7 +123,7 @@ class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader:
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
         while ( {
-          !glfwWindowShouldClose(window)
+          !world.gameConfig.close
         }) {
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
 

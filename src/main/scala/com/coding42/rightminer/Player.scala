@@ -8,8 +8,8 @@ import org.lwjgl.glfw.GLFW.{GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_S, GLFW_KEY_W}
   */
 object Player {
 
-  def apply(resources: Resources): (GameObject, Set[Component]) = {
-    val player = GameObject(Transform(Position(0, 0, 0)))
+  def apply(resources: Resources): Entity = {
+    val player = GameObject("player", Transform(Position(0, 0, 0)))
     val components = Set(
       SpriteRenderer(player.ref, resources.player),
 

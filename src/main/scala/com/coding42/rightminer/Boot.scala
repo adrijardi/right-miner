@@ -5,6 +5,6 @@ import com.coding42.engine.{Booter, GameConfig}
 /**
   * Main class for the right miner game
   */
-object Boot extends Booter(GameConfig(300, 300), MinerResourceLoader, MinerEntitiesLoader) with App {
+object Boot extends Booter(GameConfig(300, 300, "Rigth miner!", false), MinerResourceLoader, MinerEntitiesLoader) with App {
   run()
 }
