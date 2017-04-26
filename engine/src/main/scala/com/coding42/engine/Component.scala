@@ -15,6 +15,7 @@ case class SpriteRenderer(gameObjectRef: GameObjectRef, texture: Texture) extend
   def draw(world: World): Unit = {
 
     val position = gameObject(world).transform.position
+    val scale = gameObject(world).transform.scale
 
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.id)
 
@@ -24,17 +25,21 @@ case class SpriteRenderer(gameObjectRef: GameObjectRef, texture: Texture) extend
     //    texture.bind
     // translate to the right location and prepare to draw
     GL11.glTranslatef(position.x, position.z, 0)
-    GL11.glColor3f(1, 1, 1)
+//    GL11.glColor3f(1, 1, 1)
     // draw a quad textured to match the sprite
     GL11.glBegin(GL11.GL_QUADS)
+
     GL11.glTexCoord2f(0, 0)
     GL11.glVertex2f(0, 0)
-    GL11.glTexCoord2f(0, texture.height)
-    GL11.glVertex2f(0, world.gameConfig.screenHeight)
-    GL11.glTexCoord2f(texture.width, texture.height)
-    GL11.glVertex2f(world.gameConfig.screenWidth, world.gameConfig.screenHeight)
-    GL11.glTexCoord2f(texture.width, 0)
-    GL11.glVertex2f(world.gameConfig.screenWidth, 0)
+
+    GL11.glTexCoord2f(0, 1)
+    GL11.glVertex2f(0, scale.z)
+
+    GL11.glTexCoord2f(1, 1)
+    GL11.glVertex2f(scale.x, scale.z)
+
+    GL11.glTexCoord2f(1, 0)
+    GL11.glVertex2f(scale.x, 0)
 
     GL11.glEnd()
     // restore the model view matrix to prevent contamination

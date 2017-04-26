@@ -46,22 +46,14 @@ object TextureLoader {
       }) {
         val pixel = pixels(y * image.getWidth + x)
         buffer.put(((pixel >> 16) & 0xFF).toByte) // Red component
-
         buffer.put(((pixel >> 8) & 0xFF).toByte) // Green component
-
         buffer.put((pixel & 0xFF).toByte) // Blue component
-
         buffer.put(((pixel >> 24) & 0xFF).toByte) // Alpha component. Only for RGBA
 
-
-        {
-          x += 1; x - 1
-        }
+        x += 1
       }
 
-      {
-        y += 1; y - 1
-      }
+      y += 1
     }
     buffer.flip //FOR THE LOVE OF GOD DO NOT FORGET THIS
 
