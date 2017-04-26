@@ -10,7 +10,7 @@ object Player {
 
   case class PlayerMovement(ref: ComponentRef, gameObjectRef: GameObjectRef, xMov: Int, zMov: Int) extends CodeLogic {
 
-    val speed = 3f
+    val speed = 30f
 
     override def handleKeyDown(key: Int)(world: World): World = {
       key match {

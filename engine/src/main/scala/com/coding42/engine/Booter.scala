@@ -49,8 +49,8 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
     glfwSetKeyCallback(window, (window: Long, key: Int, scancode: Int, action: Int, mods: Int) => {
       def foo(window: Long, key: Int, scancode: Int, action: Int, mods: Int) = action match {
 //        case GLFW_PRESS => invokeKey(_.handleKeyPressed(key))
-        case GLFW_PRESS => invokeKey(_.handleKeyDown(key))
-        case GLFW_RELEASE => invokeKey(_.handleKeyUp(key))
+        case GLFW_PRESS => KeyManager.storeDownKey(key)//invokeKey(_.handleKeyDown(key))
+        case GLFW_RELEASE => KeyManager.storeUpKey(key)//invokeKey(_.handleKeyUp(key))
         case n => println(s"Not handling event of type $n")
       }
 
@@ -78,12 +78,6 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
     glfwSwapInterval(1)
     // Make the window visible
     glfwShowWindow(window)
-  }
-
-  private def invokeKey(pressFn: (CodeLogic) => (World) => World) = {
-    world = world.allComponents.collect {
-      case c: CodeLogic => c
-    }.foldLeft(world)((w, l) => pressFn(l)(w)) // TODO change to traverse ?
   }
 
   private def loop() = { // This line is critical for LWJGL's interoperation with GLFW's
@@ -120,37 +114,17 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
+
+        var deltaTime = 1f
         while ( {
           !world.gameConfig.close
         }) {
-          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
+          val startTime = System.currentTimeMillis()
 
-          // Execute onUpdate on all logic components
-          world = world.logicComponents.foldLeft(world)( (worldRes, c) => c.onUpdate(1f)(worldRes) )
+          world = loopStep(deltaTime)(world)
 
-          // Handle collisions
-          // TODO make simpler
-          try {
-            world = Collider.collisions(world.colliderComponents)(world)
-              .foldLeft(world) { case (worldRes, (goRef, collisions)) =>
-                collisions.foldLeft(worldRes)((worldCollision, collision) =>
-                  worldCollision.logicComponents(goRef)
-                    .foldLeft(worldRes)((worldResLogic, logic) => logic.onCollisionEnter(collision)(worldResLogic))
-                )
-              }
-          } catch {
-            case NonFatal(t) =>
-              println(t)
-          }
-
-          // Execute draw on all Sprite renderers components
-          world.spriteComponents.foreach(_.draw(world))
-
-          glfwSwapBuffers(window) // swap the color buffers
-
-          // Poll for window events. The key callback above will only be
-          // invoked during this call.
-          glfwPollEvents()
+          val endTime = System.currentTimeMillis()
+          deltaTime = (endTime-startTime).toFloat / 1000f
         }
 
       case Failure(NonFatal(t)) =>
@@ -158,4 +132,39 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
     }
   }
 
+  private def loopStep(deltaTime: Float)(initialWorld: World): World = {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
+
+    // Consume keys
+    var world = KeyManager.invokeKeys(initialWorld)
+
+    // Execute onUpdate on all logic components
+    world = world.logicComponents.foldLeft(world)((worldRes, c) => c.onUpdate(deltaTime)(worldRes))
+
+    // Handle collisions
+    // TODO make simpler
+    try {
+      world = Collider.collisions(world.colliderComponents)(world)
+        .foldLeft(world) { case (worldRes, (goRef, collisions)) =>
+          collisions.foldLeft(worldRes)((worldCollision, collision) =>
+            worldCollision.logicComponents(goRef)
+              .foldLeft(worldRes)((worldResLogic, logic) => logic.onCollisionEnter(collision)(worldResLogic))
+          )
+        }
+    } catch {
+      case NonFatal(t) =>
+        println(t)
+    }
+
+    // Execute draw on all Sprite renderers components
+    world.spriteComponents.foreach(_.draw(world))
+
+    glfwSwapBuffers(window) // swap the color buffers
+
+    // Poll for window events. The key callback above will only be
+    // invoked during this call.
+    glfwPollEvents()
+
+    world
+  }
 }

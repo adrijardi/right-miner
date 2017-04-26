@@ -60,7 +60,7 @@ object SpriteRenderer {
 trait CodeLogic extends Component {
   def handleKeyDown(key: Int)(world: World): World = world
   def handleKeyUp(key: Int)(world: World): World = world
-  def handleKeyPressed(key: Int)(world: World): World = world
+//  def handleKeyPressed(key: Int)(world: World): World = world
 
   def onStart(world: World): World = world
   def onUpdate(deltaTime: Float)(world: World): World = world

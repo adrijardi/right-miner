@@ -23,13 +23,12 @@ object ElementRef {
     var counter = counters.get(clazz)
 
     if (counter.isEmpty) {
-      synchronized(this) {
+      synchronized {
         counter = counters.get(clazz)
         if (counter.isEmpty) {
           counter = Some(new AtomicInteger(0))
           counters = counters + (clazz -> counter.get)
         }
-        _ => () // TODO ???
       }
     }
 
