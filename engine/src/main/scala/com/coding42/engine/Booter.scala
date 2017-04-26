@@ -12,7 +12,7 @@ import org.lwjgl.system.MemoryUtil._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader: EntitiesLoader) {
+class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resources], entitiesLoader: EntitiesLoader[Resources]) {
   private var window = 0L
   private var world: World = World.empty(config)
 
