@@ -1,16 +1,20 @@
+package com.coding42.engine
+
 import org.lwjgl._
-import org.lwjgl.glfw._
-import org.lwjgl.opengl._
 import org.lwjgl.glfw.Callbacks._
 import org.lwjgl.glfw.GLFW._
+import org.lwjgl.glfw._
 import org.lwjgl.opengl.GL11._
+import org.lwjgl.opengl._
 import org.lwjgl.system.MemoryStack._
 import org.lwjgl.system.MemoryUtil._
 
-import scala.util.Try
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
-object Boot extends App {
+class Booter(config: GameConfig, resourceLoader: ResourceLoader, entitiesLoader: EntitiesLoader) {
   private var window = 0L
+  private var world: World = World.empty(config)
 
   def run(): Unit = {
     System.out.println("Hello LWJGL " + Version.getVersion + "!")
@@ -23,12 +27,6 @@ object Boot extends App {
     glfwTerminate()
     glfwSetErrorCallback(null).free()
   }
-
-  val width = 300
-  val height = 300
-
-  var posX = 0
-  var posY = 0
 
   private def init() = { // Setup an error callback. The default implementation
     // will print the error message in System.err.
@@ -43,17 +41,19 @@ object Boot extends App {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE) // the window will be resizable
 
     // Create the window
-    window = glfwCreateWindow(width, height, "Hello World!", NULL, NULL)
+    val config = world.gameConfig
+    window = glfwCreateWindow(config.screenWidth, config.screenHeight, "Hello World!", NULL, NULL)
     if (window == NULL) throw new RuntimeException("Failed to create the GLFW window")
 
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
     glfwSetKeyCallback(window, (window: Long, key: Int, scancode: Int, action: Int, mods: Int) => {
       def foo(window: Long, key: Int, scancode: Int, action: Int, mods: Int) = {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true) // We will detect this in the rendering loop
-        if (key == GLFW_KEY_D) posX += 1
-        if (key == GLFW_KEY_A) posX -= 1
-        if (key == GLFW_KEY_S) posY += 1
-        if (key == GLFW_KEY_W) posY -= 1
+        if (action == GLFW_PRESS) {
+          world = world.allComponents.collect {
+            case c: CodeLogic => c
+          }.foldLeft(world)( (w, l) => l.handleKeyPressed(key)(w)) // TODO change to traverse ?
+        }
       }
 
       foo(window, key, scancode, action, mods)
@@ -83,11 +83,6 @@ object Boot extends App {
     glfwShowWindow(window)
   }
 
-  private def loadResouces: Try[Resources] = {
-    val texture = TextureLoader.newTexture("8_Bit_Mario.png")
-    texture.map(Resources)
-  }
-
   private def loop() = { // This line is critical for LWJGL's interoperation with GLFW's
     // OpenGL context, or any context that is managed externally.
     // LWJGL detects the context that is current in the current thread,
@@ -95,66 +90,53 @@ object Boot extends App {
     // bindings available for use.
     GL.createCapabilities
 
-    loadResouces map { resources =>
-      // enable textures since we're going to use these for our sprites// enable textures since we're going to use these for our sprites
-      GL11.glEnable(GL11.GL_TEXTURE_2D)
+    // enable textures since we're going to use these for our sprites// enable textures since we're going to use these for our sprites
+    GL11.glEnable(GL11.GL_TEXTURE_2D)
 
-      // disable the OpenGL depth test since we're rendering 2D graphics
-      GL11.glDisable(GL11.GL_DEPTH_TEST)
+    // disable the OpenGL depth test since we're rendering 2D graphics
+    GL11.glDisable(GL11.GL_DEPTH_TEST)
 
-      GL11.glMatrixMode(GL11.GL_PROJECTION)
-      GL11.glLoadIdentity()
+    GL11.glMatrixMode(GL11.GL_PROJECTION)
+    GL11.glLoadIdentity()
 
-      GL11.glOrtho(0, width, height, 0, -1, 1)
+    val config = world.gameConfig
+    GL11.glOrtho(0, config.screenWidth, config.screenHeight, 0, -1, 1)
 
-      // Set the clear color
-      glClearColor(.3f, 0.8f, 0.3f, 0.0f)
-      // Run the rendering loop until the user has attempted to close
-      // the window or has pressed the ESCAPE key.
-      while ( {
-        !glfwWindowShouldClose(window)
-      }) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
+    // Set the clear color
+    glClearColor(.3f, 0.8f, 0.3f, 0.0f)
 
-        draw(resources.player, posX, posY)
-        glfwSwapBuffers(window) // swap the color buffers
+    resourceLoader() match {
+      case Success(resources) =>
 
-        // Poll for window events. The key callback above will only be
-        // invoked during this call.
-        glfwPollEvents()
-      }
+        val entities = entitiesLoader(resources).unzip
+        val gameObjects = entities._1
+        val components = entities._2.flatten
+        world = components.foldLeft(world)( (worldRes, c) => worldRes.withComponent(c) )
+
+        world = gameObjects.foldLeft(world)( (worldRes, go) => worldRes.withGameObject(go) )
+
+        // Run the rendering loop until the user has attempted to close
+        // the window or has pressed the ESCAPE key.
+        while ( {
+          !glfwWindowShouldClose(window)
+        }) {
+          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
+
+          world.allComponents.foreach {
+            case c: SpriteRenderer => c.draw(world)
+            case _ => ()
+          }
+
+          glfwSwapBuffers(window) // swap the color buffers
+
+          // Poll for window events. The key callback above will only be
+          // invoked during this call.
+          glfwPollEvents()
+        }
+
+      case Failure(NonFatal(t)) =>
+        System.err.println(s"Could not load resources, cause: $t")
     }
-
   }
 
-  import org.lwjgl.opengl.GL11
-
-  def draw(texture: Texture, x: Int, y: Int): Unit = {
-
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.id)
-
-    // store the current model matrix
-    GL11.glPushMatrix()
-    // bind to the appropriate texture for this sprite
-//    texture.bind
-    // translate to the right location and prepare to draw
-    GL11.glTranslatef(x, y, 0)
-    GL11.glColor3f(1, 1, 1)
-    // draw a quad textured to match the sprite
-    GL11.glBegin(GL11.GL_QUADS)
-    GL11.glTexCoord2f(0, 0)
-    GL11.glVertex2f(0, 0)
-    GL11.glTexCoord2f(0, texture.height)
-    GL11.glVertex2f(0, height)
-    GL11.glTexCoord2f(texture.width, texture.height)
-    GL11.glVertex2f(width, height)
-    GL11.glTexCoord2f(texture.width, 0)
-    GL11.glVertex2f(width, 0)
-
-    GL11.glEnd()
-    // restore the model view matrix to prevent contamination
-    GL11.glPopMatrix()
-  }
-
-  run()
 }

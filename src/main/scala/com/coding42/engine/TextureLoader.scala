@@ -1,10 +1,11 @@
-import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import javax.imageio.ImageIO
+package com.coding42.engine
+
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import javax.imageio.ImageIO
+
+import org.lwjgl.BufferUtils
+import org.lwjgl.opengl.{GL11, GL12}
 
 import scala.util.Try
 
@@ -14,7 +15,7 @@ object TextureLoader {
 
   def newTexture(path: String): Try[Texture] = {
     Try {
-      val IS = getClass.getResourceAsStream(path)
+      val IS = getClass.getClassLoader.getResourceAsStream(path)
       val BAOS = new ByteArrayOutputStream
       var read1 = IS.read
       while ( {
