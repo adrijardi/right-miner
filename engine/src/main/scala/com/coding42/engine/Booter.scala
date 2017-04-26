@@ -48,9 +48,9 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
     glfwSetKeyCallback(window, (window: Long, key: Int, scancode: Int, action: Int, mods: Int) => {
       def foo(window: Long, key: Int, scancode: Int, action: Int, mods: Int) = action match {
-        case GLFW_PRESS => invokeKey(_.handleKeyPressed(key))
-        case GLFW_RELEASE => invokeKey(_.handleKeyDown(key))
-        case GLFW_PRESS => invokeKey(_.handleKeyUp(key))
+//        case GLFW_PRESS => invokeKey(_.handleKeyPressed(key))
+        case GLFW_PRESS => invokeKey(_.handleKeyDown(key))
+        case GLFW_RELEASE => invokeKey(_.handleKeyUp(key))
         case n => println(s"Not handling event of type $n")
       }
 
@@ -127,10 +127,11 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
         }) {
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
 
-          world.allComponents.foreach {
-            case c: SpriteRenderer => c.draw(world)
-            case _ => ()
-          }
+          // Execute onUpdate on all logic components
+          world = world.logicComponents.foldLeft(world)( (worldRes, c) => c.onUpdate(1f)(worldRes) )
+
+          // Execute draw on all Sprite renderers components
+          world.spriteComponents.foreach(_.draw(world))
 
           glfwSwapBuffers(window) // swap the color buffers
 

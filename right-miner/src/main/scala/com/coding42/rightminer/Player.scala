@@ -8,30 +8,57 @@ import org.lwjgl.glfw.GLFW.{GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_S, GLFW_KEY_W}
   */
 object Player {
 
+  case class PlayerMovement(ref: ComponentRef, gameObjectRef: GameObjectRef, xMov: Int, zMov: Int) extends CodeLogic {
+
+    val speed = 3f
+
+    override def handleKeyDown(key: Int)(world: World): World = {
+      key match {
+        case GLFW_KEY_D => world.withComponent(copy(xMov = 1))
+        case GLFW_KEY_A => world.withComponent(copy(xMov = -1))
+        case GLFW_KEY_S => world.withComponent(copy(zMov = 1))
+        case GLFW_KEY_W => world.withComponent(copy(zMov = -1))
+        case _ => world
+      }
+    }
+
+
+    override def handleKeyUp(key: Int)(world: World): World = {
+      (key, xMov, zMov) match {
+        case (GLFW_KEY_D, 1, _) => world.withComponent(copy(xMov = 0))
+        case (GLFW_KEY_A, -1, _) => world.withComponent(copy(xMov = 0))
+        case (GLFW_KEY_S, _, 1) => world.withComponent(copy(zMov = 0))
+        case (GLFW_KEY_W, _, -1) => world.withComponent(copy(zMov = 0))
+        case _ => world
+      }
+    }
+
+    override def onUpdate(deltaTime: Float)(world: World): World = {
+      val go = gameObject(world)
+      val position = go.transform.position
+
+      def mov(axisMov: Int) = {
+        axisMov match {
+          case x if x < 0 => speed * deltaTime * -1
+          case x if x > 0 => speed * deltaTime
+          case _ => 0f
+        }
+      }
+
+      val newPos = position.copy(x = position.x + mov(xMov), z = position.z + mov(zMov))
+      world.withGameObject(go.withPos(newPos))
+    }
+  }
+
   def apply(resources: Resources): Entity = {
     val player = GameObject("player", Transform(Position(0, 0, 0), Scale(16, 1, 30)))
-    val components = Set(
+
+    val components = Set[Component]( // TODO why this?
       SpriteRenderer(player.ref, resources.player),
-
-      new CodeLogic {
-
-        override def gameObjectRef: GameObjectRef = player.ref
-
-        override def handleKeyPressed(key: Int)(world: World): World = {
-          val go = gameObject(world)
-          val currentPos = go.transform.position
-          key match {
-            case GLFW_KEY_D => world.withGameObject(go.withPos(currentPos.copy(x = currentPos.x + 1)))
-            case GLFW_KEY_A => world.withGameObject(go.withPos(currentPos.copy(x = currentPos.x - 1)))
-            case GLFW_KEY_S => world.withGameObject(go.withPos(currentPos.copy(z = currentPos.z + 1)))
-            case GLFW_KEY_W => world.withGameObject(go.withPos(currentPos.copy(z = currentPos.z - 1)))
-            case _ => world
-          }
-        }
-
-      }
+      PlayerMovement(ComponentRef(), player.ref, 0, 0)
     )
 
     (player, components)
   }
+
 }

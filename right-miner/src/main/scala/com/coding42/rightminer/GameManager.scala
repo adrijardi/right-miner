@@ -14,9 +14,11 @@ object GameManager {
     val components = Set[Component](
       new CodeLogic {
 
+        override def ref: ComponentRef = ComponentRef()
+
         override def gameObjectRef: GameObjectRef = manager.ref
 
-        override def handleKeyPressed(key: Int)(world: World): World = {
+        override def handleKeyUp(key: Int)(world: World): World = {
           key match {
             case GLFW_KEY_ESCAPE => world.copy(gameConfig = world.gameConfig.copy(close = true))
             case _ => world

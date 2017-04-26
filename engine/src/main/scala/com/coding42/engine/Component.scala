@@ -6,11 +6,12 @@ import org.lwjgl.opengl.GL11
   * Trait for common components
   */
 sealed trait Component {
+  def ref: ComponentRef
   def gameObjectRef: GameObjectRef
   def gameObject(world: World): GameObject = world.gameObjects(gameObjectRef) // TODO this might blow up when deleting GOs
 }
 
-case class SpriteRenderer(gameObjectRef: GameObjectRef, texture: Texture) extends Component {
+case class SpriteRenderer(ref: ComponentRef, gameObjectRef: GameObjectRef, texture: Texture) extends Component {
 
   def draw(world: World): Unit = {
 
@@ -48,8 +49,18 @@ case class SpriteRenderer(gameObjectRef: GameObjectRef, texture: Texture) extend
 
 }
 
+object SpriteRenderer {
+
+  def apply(gameObjectRef: GameObjectRef, texture: Texture): SpriteRenderer = {
+    new SpriteRenderer(ComponentRef(), gameObjectRef, texture)
+  }
+
+}
 trait CodeLogic extends Component {
   def handleKeyDown(key: Int)(world: World): World = world
   def handleKeyUp(key: Int)(world: World): World = world
   def handleKeyPressed(key: Int)(world: World): World = world
+
+  def onStart(world: World): World = world
+  def onUpdate(deltaTime: Float)(world: World): World = world
 }
