@@ -56,6 +56,7 @@ object SpriteRenderer {
   }
 
 }
+
 trait CodeLogic extends Component {
   def handleKeyDown(key: Int)(world: World): World = world
   def handleKeyUp(key: Int)(world: World): World = world
@@ -63,4 +64,56 @@ trait CodeLogic extends Component {
 
   def onStart(world: World): World = world
   def onUpdate(deltaTime: Float)(world: World): World = world
+
+  def onCollisionEnter(collision: Collision)(world: World): World = world
+}
+
+sealed trait Collider extends Component {
+
+  def relativePosition: Position
+
+  def trigger: Boolean
+
+  def position(world: World): Position = gameObject(world).transform.position + relativePosition
+}
+
+object Collider {
+
+  def hasCollision(a: Collider, b: Collider)(world: World): Boolean = {
+    (a,b) match {
+      case (b1:SphereCollider, b2:SphereCollider) => hasCollision(b1, b2)(world: World)
+    }
+  }
+
+  def hasCollision(a: SphereCollider, b: SphereCollider)(world: World): Boolean = {
+    Position.distance(a.position(world), b.position(world)) < a.radius + b.radius
+  }
+
+  def collisions(c: Iterable[Collider])(world: World): Map[GameObjectRef, Set[Collision]] = {
+    import cats.Semigroup
+    import cats.implicits._
+    val semigroup = Semigroup[Map[GameObjectRef, Set[Collision]]] // TODO check this works fine, maybe a little test ;)
+    c match {
+      case Nil => Map.empty
+      case h :: t => semigroup.combine(collisions(h, t)(world), collisions(t)(world))
+    }
+  }
+
+  private def collisions(c: Collider, iterable: Iterable[Collider])(world: World): Map[GameObjectRef, Set[Collision]] = {
+    iterable.collect {
+      case o if hasCollision(c, o)(world) =>
+        Map(c.gameObjectRef -> Set(Collision(o)), o.gameObjectRef -> Set(Collision(c)))
+    }.fold(Map.empty)(_ ++ _)
+  }
+
+}
+
+case class SphereCollider(ref: ComponentRef, gameObjectRef: GameObjectRef, relativePosition: Position, radius: Float, trigger: Boolean) extends Collider
+
+object SphereCollider {
+
+  def apply(gameObjectRef: GameObjectRef, relativePosition: Position, radius: Float, trigger: Boolean): SphereCollider = {
+    new SphereCollider(ComponentRef(), gameObjectRef, relativePosition, radius, trigger)
+  }
+  
 }

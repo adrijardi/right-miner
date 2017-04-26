@@ -15,8 +15,22 @@ case class World(gameObjects: Map[GameObjectRef, GameObject], components: Map[Co
 
   def allComponents: Iterable[Component] = components.values
 
+  /**
+    * Get all logic components on the system
+    */
   def logicComponents: Iterable[CodeLogic] = allComponents.collect {
     case c: CodeLogic => c
+  }
+
+  /**
+    * Get all logic components for the game object
+    */
+  // TODO performance improvements
+  def logicComponents(gameObjectRef: GameObjectRef): Iterable[CodeLogic] =
+    logicComponents.filter(_.gameObjectRef == gameObjectRef)
+
+  def colliderComponents: Iterable[Collider] = allComponents.collect {
+    case c: Collider => c
   }
 
   def spriteComponents: Iterable[SpriteRenderer] = allComponents.collect {

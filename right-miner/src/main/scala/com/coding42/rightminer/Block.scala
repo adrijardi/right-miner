@@ -9,13 +9,14 @@ import org.lwjgl.glfw.GLFW.{GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_S, GLFW_KEY_W}
 object Block {
 
   def apply(resources: Resources): Entity = {
-    val player = GameObject("block", Transform(Position(100, 0, 100), Scale(16, 1, 30)))
+    val block = GameObject("block", Transform(Position(100, 0, 100), Scale(16, 1, 30)))
 
     val components = Set[Component]( // TODO why this?
-      SpriteRenderer(player.ref, resources.block)
+      SpriteRenderer(block.ref, resources.block),
+      SphereCollider(block.ref, Position.zero, 20, trigger = true)
     )
 
-    (player, components)
+    (block, components)
   }
 
 }

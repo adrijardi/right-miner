@@ -13,6 +13,8 @@ val libVersion = new {
 
 
 val engineLibraryDependencies = Seq(
+  "org.typelevel" %% "cats" % "0.9.0",
+
   "org.lwjgl" % "lwjgl" % libVersion.lwjglVersion,
   "org.lwjgl" % "lwjgl-assimp" % libVersion.lwjglVersion,
   "org.lwjgl" % "lwjgl-bgfx" % libVersion.lwjglVersion,

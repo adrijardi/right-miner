@@ -57,22 +57,20 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
       foo(window, key, scancode, action, mods)
     })
     // Get the thread stack and push a new frame
+    val stack = stackPush
     try {
-      val stack = stackPush
-      try {
-        val pWidth = stack.mallocInt(1)
-        // int*
-        val pHeight = stack.mallocInt(1)
-        // Get the window size passed to glfwCreateWindow
-        glfwGetWindowSize(window, pWidth, pHeight)
-        // Get the resolution of the primary monitor
-        val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor)
-        // Center the window
-        glfwSetWindowPos(window, (vidmode.width - pWidth.get(0)) / 2, (vidmode.height - pHeight.get(0)) / 2)
-        // the stack frame is popped automatically
-      } finally {
-        if (stack != null) stack.close()
-      }
+      val pWidth = stack.mallocInt(1)
+      // int*
+      val pHeight = stack.mallocInt(1)
+      // Get the window size passed to glfwCreateWindow
+      glfwGetWindowSize(window, pWidth, pHeight)
+      // Get the resolution of the primary monitor
+      val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor)
+      // Center the window
+      glfwSetWindowPos(window, (vidmode.width - pWidth.get(0)) / 2, (vidmode.height - pHeight.get(0)) / 2)
+      // the stack frame is popped automatically
+    } finally {
+      if (stack != null) stack.close()
     }
     // Make the OpenGL context current
     glfwMakeContextCurrent(window)
@@ -129,6 +127,21 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
 
           // Execute onUpdate on all logic components
           world = world.logicComponents.foldLeft(world)( (worldRes, c) => c.onUpdate(1f)(worldRes) )
+
+          // Handle collisions
+          // TODO make simpler
+          try {
+            world = Collider.collisions(world.colliderComponents)(world)
+              .foldLeft(world) { case (worldRes, (goRef, collisions)) =>
+                collisions.foldLeft(worldRes)((worldCollision, collision) =>
+                  worldCollision.logicComponents(goRef)
+                    .foldLeft(worldRes)((worldResLogic, logic) => logic.onCollisionEnter(collision)(worldResLogic))
+                )
+              }
+          } catch {
+            case NonFatal(t) =>
+              println(t)
+          }
 
           // Execute draw on all Sprite renderers components
           world.spriteComponents.foreach(_.draw(world))

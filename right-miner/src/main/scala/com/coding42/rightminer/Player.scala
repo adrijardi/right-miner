@@ -22,7 +22,6 @@ object Player {
       }
     }
 
-
     override def handleKeyUp(key: Int)(world: World): World = {
       (key, xMov, zMov) match {
         case (GLFW_KEY_D, 1, _) => world.withComponent(copy(xMov = 0))
@@ -48,14 +47,21 @@ object Player {
       val newPos = position.copy(x = position.x + mov(xMov), z = position.z + mov(zMov))
       world.withGameObject(go.withPos(newPos))
     }
+
+    override def onCollisionEnter(collision: Collision)(world: World): World = {
+      val go = gameObject(world)
+      world.withGameObject(go.withPos(Position.zero))
+    }
+
   }
 
   def apply(resources: Resources): Entity = {
-    val player = GameObject("player", Transform(Position(0, 0, 0), Scale(16, 1, 30)))
+    val player = GameObject("player", Transform(Position.zero, Scale(16, 1, 30)))
 
     val components = Set[Component]( // TODO why this?
       SpriteRenderer(player.ref, resources.player),
-      PlayerMovement(ComponentRef(), player.ref, 0, 0)
+      PlayerMovement(ComponentRef(), player.ref, 0, 0),
+      SphereCollider(player.ref, Position.zero, 20, trigger = true)
     )
 
     (player, components)
