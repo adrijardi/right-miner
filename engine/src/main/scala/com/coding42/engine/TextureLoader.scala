@@ -1,7 +1,6 @@
 package com.coding42.engine
 
 import java.awt.image.BufferedImage
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.imageio.ImageIO
 
 import org.lwjgl.BufferUtils
@@ -15,23 +14,16 @@ object TextureLoader {
 
   def newTexture(path: String): Try[Texture] = {
     Try {
-      val IS = getClass.getClassLoader.getResourceAsStream(path)
-      val BAOS = new ByteArrayOutputStream
-      var read1 = IS.read
-      while ( {
-        read1 != -1
-      }) {
-        BAOS.write(read1)
-        read1 = IS.read
+      try {
+        Option(getClass.getClassLoader.getResourceAsStream(path)).map { inputStream =>
+          loadOpenGL(ImageIO.read(inputStream))
+        }
+          .getOrElse(throw new NullPointerException(s"Cannot load input stream on path $path"))
       }
-      val textureBA = BAOS.toByteArray
-      BAOS.close()
-      val textureBI = ImageIO.read(new ByteArrayInputStream(textureBA))
-      loadTexture(textureBI)
     }
   }
 
-  private[this] def loadTexture(image: BufferedImage): Texture = {
+  private[this] def loadOpenGL(image: BufferedImage): Texture = {
     val pixels = new Array[Int](image.getWidth * image.getHeight)
     image.getRGB(0, 0, image.getWidth, image.getHeight, pixels, 0, image.getWidth)
     val buffer = BufferUtils.createByteBuffer(image.getWidth * image.getHeight * BYTES_PER_PIXEL)
@@ -59,7 +51,8 @@ object TextureLoader {
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     //Send texel data to OpenGL
-    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, image.getWidth, image.getHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer)
+    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, image.getWidth, image.getHeight, 0,
+      GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer)
 
     //Return the texture ID so we can bind it later again
     Texture(textureID, image.getHeight, image.getWidth)
