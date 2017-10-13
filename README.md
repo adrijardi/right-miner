@@ -1,3 +1,3 @@
 # Right miner
 
-Game to go trying the game engine :)
+Game to show the game engine on all it's greatness.

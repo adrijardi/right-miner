@@ -17,9 +17,9 @@ object Position {
 
   def distance(a: Position, b: Position): Float = {
     import Math._
-    val x = pow(a.x, 2) - pow(b.x, 2)
-    val y = pow(a.y, 2) - pow(b.y, 2)
-    val z = pow(a.z, 2) - pow(b.z, 2)
+    val x = pow(a.x - b.x, 2)
+    val y = pow(a.y - b.y, 2)
+    val z = pow(a.z - b.z, 2)
     sqrt(x + y + z).toFloat
   }
 

@@ -2,9 +2,14 @@ import sbt.Keys.name
 
 scalaVersion := "2.12.2"
 
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots")
+)
+
 lazy val commonSettings = Seq(
   organization := "com.coding42",
-  scalaVersion := "2.12.2"
+  scalaVersion := "2.12.3"
 )
 
 val libVersion = new {
@@ -14,6 +19,7 @@ val libVersion = new {
 
 val engineLibraryDependencies = Seq(
   "org.typelevel" %% "cats" % "0.9.0",
+  "com.chuusai"   %% "shapeless" % "2.3.2",
 
   "org.lwjgl" % "lwjgl" % libVersion.lwjglVersion,
   "org.lwjgl" % "lwjgl-assimp" % libVersion.lwjglVersion,

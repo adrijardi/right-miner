@@ -14,12 +14,10 @@ object TextureLoader {
 
   def newTexture(path: String): Try[Texture] = {
     Try {
-      try {
-        Option(getClass.getClassLoader.getResourceAsStream(path)).map { inputStream =>
-          loadOpenGL(ImageIO.read(inputStream))
-        }
-          .getOrElse(throw new NullPointerException(s"Cannot load input stream on path $path"))
+      Option(getClass.getClassLoader.getResourceAsStream(path)).map { inputStream =>
+        loadOpenGL(ImageIO.read(inputStream))
       }
+        .getOrElse(throw new NullPointerException(s"Cannot load input stream on path $path"))
     }
   }
 

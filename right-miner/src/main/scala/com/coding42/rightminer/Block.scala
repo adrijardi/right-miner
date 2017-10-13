@@ -13,7 +13,7 @@ object Block {
 
     val components = Set[Component]( // TODO why this?
       SpriteRenderer(block.ref, resources.block),
-      SphereCollider(block.ref, Position.zero, 20, trigger = true)
+      BoxCollider(block.ref, Position.zero, Position(10, 10, 20), trigger = true)
     )
 
     (block, components)

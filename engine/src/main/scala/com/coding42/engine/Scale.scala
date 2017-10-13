@@ -7,6 +7,6 @@ case class Scale(x: Float, y: Float, z: Float)
 
 object Scale {
 
-  val zero: Scale = Scale(0,0,0)
+  val one: Scale = Scale(1,1,1)
 
 }

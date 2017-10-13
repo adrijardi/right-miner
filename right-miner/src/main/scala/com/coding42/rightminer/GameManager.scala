@@ -9,7 +9,7 @@ import org.lwjgl.glfw.GLFW._
 object GameManager {
 
   def apply(resources: Resources): Entity = {
-    val manager = GameObject("gameManager", Transform(Position.zero, Scale.zero))
+    val manager = GameObject("gameManager", Transform(Position.zero, Scale.one))
 
     val components = Set[Component](
       new CodeLogic {

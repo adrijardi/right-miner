@@ -88,16 +88,18 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
     GL.createCapabilities
 
     // enable textures since we're going to use these for our sprites// enable textures since we're going to use these for our sprites
-    GL11.glEnable(GL11.GL_TEXTURE_2D)
+    glEnable(GL11.GL_TEXTURE_2D)
 
     // disable the OpenGL depth test since we're rendering 2D graphics
-    GL11.glDisable(GL11.GL_DEPTH_TEST)
+    glDisable(GL11.GL_DEPTH_TEST)
 
-    GL11.glMatrixMode(GL11.GL_PROJECTION)
-    GL11.glLoadIdentity()
+    glMatrixMode(GL11.GL_PROJECTION)
+    glLoadIdentity()
 
     val config = world.gameConfig
-    GL11.glOrtho(0, config.screenWidth, config.screenHeight, 0, -1, 1)
+    glOrtho(0, config.screenWidth, config.screenHeight, 0, -100, 100)
+
+    glDisable(GL_LIGHTING)
 
     // Set the clear color
     glClearColor(.3f, 0.8f, 0.3f, 0.0f)
@@ -157,7 +159,7 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
     }
 
     // Execute draw on all Sprite renderers components
-    world.spriteComponents.foreach(_.draw(world))
+    world.allComponents.foreach(c => Drawable.draw(c)(world))
 
     glfwSwapBuffers(window) // swap the color buffers
 
@@ -167,4 +169,5 @@ class Booter[Resources](config: GameConfig, resourceLoader: ResourceLoader[Resou
 
     world
   }
+
 }
